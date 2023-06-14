@@ -18,4 +18,10 @@ public interface PlayerInterface {
 
 	void immersivecursedness$setEnabled(boolean v);
 	boolean immersivecursedness$getEnabled();
+
+	void immersivecursedness$setFast(boolean v);
+	boolean immersivecursedness$getFast();
+
+	int immersivecursedness$getTicksUntilBegin();
+	void immersivecursedness$setTicksUntilBegin(int ticks);
 }

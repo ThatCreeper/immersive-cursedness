@@ -32,17 +32,20 @@ public class ImmersiveCursedness implements ModInitializer {
             cursednessServer.stop();
         });
 
-        CommandRegistrationCallback.EVENT.register((dispatcher, b, c) -> {
-            dispatcher.register(CommandManager.literal("portal")
-                    .then(CommandManager.literal("toggle").executes((context) -> {
-                        PlayerInterface pi = (PlayerInterface)context.getSource().getPlayer();
-                        pi.immersivecursedness$setEnabled(!pi.immersivecursedness$getEnabled());
-                        //context.getSource().sendFeedback(Text.literal("you have now "+ (pi.immersivecursedness$getEnabled() ? "enabled" : "disabled") +" immersive portals"), false);
-                        if (pi.immersivecursedness$getEnabled() == false) {
-                            Util.getManagerFromPlayer(context.getSource().getPlayer()).purgeCache();
-                        }
-                        return Command.SINGLE_SUCCESS;
-                    })));
-        });
+        CommandRegistrationCallback.EVENT.register((dispatcher, b, c) -> dispatcher.register(CommandManager.literal("portal")
+                .then(CommandManager.literal("toggle").executes((context) -> {
+                    PlayerInterface pi = (PlayerInterface)context.getSource().getPlayer();
+                    pi.immersivecursedness$setEnabled(!pi.immersivecursedness$getEnabled());
+                    //context.getSource().sendFeedback(Text.literal("you have now "+ (pi.immersivecursedness$getEnabled() ? "enabled" : "disabled") +" immersive portals"), false);
+                    if (pi.immersivecursedness$getEnabled() == false) {
+                        Util.getManagerFromPlayer(context.getSource().getPlayer()).purgeCache();
+                    }
+                    return Command.SINGLE_SUCCESS;
+                }))
+                .then(CommandManager.literal("fast").executes((context) -> {
+                    PlayerInterface pi = (PlayerInterface)context.getSource().getPlayer();
+                    pi.immersivecursedness$setFast(!pi.immersivecursedness$getFast());
+                    return Command.SINGLE_SUCCESS;
+                }))));
     }
 }

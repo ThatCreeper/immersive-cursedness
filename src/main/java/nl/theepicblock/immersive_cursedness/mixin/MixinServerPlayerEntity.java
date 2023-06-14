@@ -30,7 +30,11 @@ public abstract class MixinServerPlayerEntity extends MixinPlayerEntity implemen
 	@Unique
 	private World unFakedWorld;
 	@Unique
-	private boolean enabled = true;
+	private boolean enabled = false;
+	@Unique
+	private int ticksUntilBegin = 500;
+	@Unique
+	private boolean fast = false;
 
 	@Override
 	public void immersivecursedness$setCloseToPortal(boolean v) {
@@ -64,9 +68,10 @@ public abstract class MixinServerPlayerEntity extends MixinPlayerEntity implemen
 
 	@Inject(method = "writeCustomDataToNbt", at = @At("HEAD"))
 	public void writeInject(NbtCompound tag, CallbackInfo ci) {
-		if (enabled != AutoConfig.getConfigHolder(Config.class).getConfig().defaultEnabled) {
-			tag.putBoolean("immersivecursednessenabled", enabled);
-		}
+		//if (enabled != AutoConfig.getConfigHolder(Config.class).getConfig().defaultEnabled) {
+		tag.putBoolean("immersivecursednessenabled", enabled);
+		//}
+		tag.putBoolean("immersivecursednessfast", fast);
 	}
 
 	@Inject(method = "readCustomDataFromNbt", at = @At("HEAD"))
@@ -75,6 +80,9 @@ public abstract class MixinServerPlayerEntity extends MixinPlayerEntity implemen
 			enabled = tag.getBoolean("immersivecursednessenabled");
 		} else {
 			enabled = AutoConfig.getConfigHolder(Config.class).getConfig().defaultEnabled;
+		}
+		if (tag.contains("immersivecursednessfast")) {
+			fast = tag.getBoolean("immersivecursednessfast");
 		}
 	}
 
@@ -91,7 +99,27 @@ public abstract class MixinServerPlayerEntity extends MixinPlayerEntity implemen
 
 	@Override
 	public void handleGetMaxNetherPortalTime(CallbackInfoReturnable<Integer> cir) {
-		if (enabled)
+		if (enabled || fast)
 			cir.setReturnValue(1);
+	}
+
+	@Override
+	public int immersivecursedness$getTicksUntilBegin() {
+		return ticksUntilBegin;
+	}
+
+	@Override
+	public void immersivecursedness$setFast(boolean v) {
+		fast = v;
+	}
+
+	@Override
+	public boolean immersivecursedness$getFast() {
+		return fast;
+	}
+
+	@Override
+	public void immersivecursedness$setTicksUntilBegin(int ticks) {
+		ticksUntilBegin = ticks;
 	}
 }
