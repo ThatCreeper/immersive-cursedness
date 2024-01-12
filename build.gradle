@@ -1,6 +1,6 @@
 plugins {
-	id "com.modrinth.minotaur" version "1.2.1"
-	id 'fabric-loom' version '0.12-SNAPSHOT'
+	id "com.modrinth.minotaur" version "2.+"
+	id 'fabric-loom' version '1.5-SNAPSHOT'
 	id 'maven-publish'
 }
 
@@ -38,28 +38,24 @@ processResources {
 	}
 }
 
-task publishModrinth (type: com.modrinth.minotaur.TaskModrinthUpload, dependsOn: remapJar) {
-	doFirst {
-		var modrinthToken = System.getenv("MODRINTH_TOKEN")
-		var changelogEnv = System.getenv("CHANGELOG")
-		var versionNameEnv = System.getenv("NAME")
-		if (modrinthToken == null || changelogEnv == null) {
-			throw new RuntimeException("Didn't find correct env variables")
-		}
-
-		token = modrinthToken
-		// An environment property called MODRINTH that is your token, set via Gradle CLI, GitHub Actions, Idea Run Configuration, or other
-		projectId = project.modrinth_project
-		uploadFile = remapJar
-
-		addLoader('fabric')
-		addGameVersion(project.minecraft_version)
-
-		versionNumber = project.mod_version
-		versionName = versionNameEnv
-		changelog = changelogEnv
-	}
+modrinth {
+    token = System.getenv("MODRINTH_TOKEN") // Remember to have the MODRINTH_TOKEN environment variable set or else this will fail - just make sure it stays private!
+    projectId = project.modrinth_project // This can be the project ID or the slug. Either will work!
+    versionNumber = project.mod_version // You don't need to set this manually. Will fail if Modrinth has this version already
+	versionName = System.getenv("NAME")
+    versionType = "release" // This is the default -- can also be `beta` or `alpha`
+	changelog = System.getenv("CHANGELOG")
+    uploadFile = remapJar // With Loom, this MUST be set to `remapJar` instead of `jar`!
+    gameVersions = ["1.20.2", "1.20.3", "1.20.4"] // Must be an array, even with only one version
+    loaders = ["fabric"] // Must also be an array - no need to specify this if you're using Loom or ForgeGradle
+    dependencies { // A special DSL for creating dependencies
+        // scope.type
+        // The scope can be `required`, `optional`, `incompatible`, or `embedded`
+        // The type can either be `project` or `version`
+        required.project "fabric-api" // Creates a new required dependency on Fabric API
+    }
 }
+
 
 tasks.withType(JavaCompile).configureEach {
 	// ensure that the encoding is set to UTF-8, no matter what the system default is
