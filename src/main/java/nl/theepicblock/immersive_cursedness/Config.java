@@ -15,7 +15,7 @@ public class Config implements ConfigData {
 	public int renderDistance = 3;
 	public boolean debugParticles = false;
 	@Comment("Whether Immersive Cursedness is on by default")
-	public boolean defaultEnabled = true;
+	public boolean defaultEnabled = false;
 
 	public transient double squaredAtmosphereRadius;
 	public transient double squaredAtmosphereRadiusPlusOne;
