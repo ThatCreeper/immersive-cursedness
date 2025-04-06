@@ -1,8 +1,7 @@
 package nl.theepicblock.immersive_cursedness.mixin;
 
 import com.mojang.authlib.GameProfile;
-import me.sargunvohra.mcmods.autoconfig1u.AutoConfig;
-import net.minecraft.entity.player.PlayerEntity;
+import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.encryption.PlayerPublicKey;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -16,7 +15,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @SuppressWarnings("PointlessBooleanExpression")
 @Mixin(ServerPlayerEntity.class)
@@ -87,11 +85,5 @@ public abstract class MixinServerPlayerEntity extends MixinPlayerEntity implemen
 	@Override
 	public boolean immersivecursedness$getEnabled() {
 		return enabled;
-	}
-
-	@Override
-	public void handleGetMaxNetherPortalTime(CallbackInfoReturnable<Integer> cir) {
-		if (enabled)
-			cir.setReturnValue(1);
 	}
 }

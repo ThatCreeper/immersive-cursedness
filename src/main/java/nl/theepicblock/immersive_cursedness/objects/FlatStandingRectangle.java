@@ -1,12 +1,10 @@
 package nl.theepicblock.immersive_cursedness.objects;
 
-import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.HeightLimitView;
-import net.minecraft.world.World;
 import nl.theepicblock.immersive_cursedness.Util;
 
 import java.util.function.Consumer;
@@ -51,12 +49,12 @@ public class FlatStandingRectangle {
 
     public BlockPos getBottomLeftBlockClamped(Vec3d center, int limit, HeightLimitView world) {
         double centerP = Util.get(center, Util.rotate(axis));
-        return createBlockPos(clamp(bottom, world.getBottomY(), world.getTopY()), clamp(left,centerP-limit,centerP+limit));
+        return createBlockPos(clamp(bottom, world.getBottomY(), world.getTopYInclusive()), clamp(left,centerP-limit,centerP+limit));
     }
 
     public BlockPos getTopRightBlockClamped(Vec3d center, int limit, HeightLimitView world) {
         double centerP = Util.get(center, Util.rotate(axis));
-        return createBlockPos(clamp(top-1, world.getBottomY(), world.getTopY()), clamp(right-1,centerP-limit,centerP+limit));
+        return createBlockPos(clamp(top-1, world.getBottomY(), world.getTopYInclusive()), clamp(right-1,centerP-limit,centerP+limit));
     }
 
     public FlatStandingRectangle expand(int i, Vec3d source) {

@@ -39,7 +39,7 @@ public class BlockUpdateMap extends Long2ObjectOpenHashMap<Short2ObjectMap<Block
                 buf.writeVarLong(((long)Block.getRawIdFromState(entry.getValue()) << 12 | entry.getShortKey()));
             }
 
-            ChunkDeltaUpdateS2CPacket packet = new ChunkDeltaUpdateS2CPacket(buf);
+            ChunkDeltaUpdateS2CPacket packet = ChunkDeltaUpdateS2CPacket.CODEC.decode(buf);
             player.networkHandler.sendPacket(packet);
         });
     }

@@ -3,17 +3,15 @@ package nl.theepicblock.immersive_cursedness.objects;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.server.world.OptionalChunk;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.WorldView;
 import net.minecraft.world.chunk.Chunk;
 import nl.theepicblock.immersive_cursedness.Util;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 public class AsyncWorldView {
 	private final Map<ChunkPos,Chunk> chunkCache = new HashMap<>();
@@ -45,9 +43,9 @@ public class AsyncWorldView {
 	public Chunk getChunk(ChunkPos chunkPos) {
 		Chunk chunk = chunkCache.get(chunkPos);
 		if (chunk == null) {
-			Optional<Chunk> chunkO = Util.getChunkAsync(world, chunkPos.x, chunkPos.z);
+			OptionalChunk<Chunk> chunkO = Util.getChunkAsync(world, chunkPos.x, chunkPos.z);
 			if (chunkO.isPresent()) {
-				chunk = chunkO.get();
+				chunk = chunkO.orElseThrow(NullPointerException::new);
 				chunkCache.put(chunkPos, chunk);
 			} else {
 				return null;

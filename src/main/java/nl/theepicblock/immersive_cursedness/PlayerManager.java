@@ -1,20 +1,18 @@
 package nl.theepicblock.immersive_cursedness;
 
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.PacketByteBuf;
+import net.minecraft.entity.player.PlayerPosition;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
-import net.minecraft.network.packet.s2c.play.EntityPositionS2CPacket;
-import net.minecraft.registry.Registries;
+import net.minecraft.network.packet.s2c.play.EntityPositionSyncS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.TypeFilter;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import nl.theepicblock.immersive_cursedness.objects.*;
 import org.jetbrains.annotations.Nullable;
@@ -36,7 +34,7 @@ public class PlayerManager {
     }
 
     public void tick(int tickCount) {
-        if (((PlayerInterface)player).immersivecursedness$getEnabled() == false) {
+        if (!((PlayerInterface) player).immersivecursedness$getEnabled()) {
             return;
         }
 
@@ -83,9 +81,7 @@ public class PlayerManager {
 
             if (tickCount % 40 == 0 || justWentThroughPortal) {
                 //replace the portal blocks in the center of the portal with air
-                BlockPos.iterate(portal.getLowerLeft(), portal.getUpperRight()).forEach(pos -> {
-                    toBeSent.put(pos.toImmutable(), Blocks.AIR.getDefaultState());
-                });
+                BlockPos.iterate(portal.getLowerLeft(), portal.getUpperRight()).forEach(pos -> toBeSent.put(pos.toImmutable(), Blocks.AIR.getDefaultState()));
             }
 
             //iterate through all layers behind the portal
@@ -103,7 +99,7 @@ public class PlayerManager {
                             }
                         }
                         //If we've reached this point. The entity isn't hidden yet. So we should hide it
-                        EntityPositionS2CPacket packet = createEntityPacket(entity, entity.getX() + 50, Double.MAX_VALUE);
+                        EntityPositionSyncS2CPacket packet = createEntityPacket(entity, entity.getX() + 50);
                         player.networkHandler.sendPacket(packet);
                         hiddenEntities.add(entity.getUuid());
                         return true;
@@ -117,12 +113,14 @@ public class PlayerManager {
                     if (dist > config.squaredAtmosphereRadiusPlusOne) return;
 
                     BlockState ret;
-                    BlockEntity entity = null;
+                    BlockEntity entity;
 
                     if (dist > config.squaredAtmosphereRadius) {
-                        ret = atmosphereBlock;
+	                    entity = null;
+	                    ret = atmosphereBlock;
                     } else if (dist > config.squaredAtmosphereRadiusMinusOne) {
-                        ret = atmosphereBetweenBlock;
+	                    entity = null;
+	                    ret = atmosphereBetweenBlock;
                     } else {
                         ret = transformProfile.transformAndGetFromWorld(pos, destinationView);
                         entity = transformProfile.transformAndGetFromWorldBlockEntity(pos, destinationView);
@@ -138,13 +136,10 @@ public class PlayerManager {
                             blockCache.put(imPos, ret);
                             toBeSent.put(imPos, ret);
                             if (entity != null) {
-                                var buf = PacketByteBufs.create();
+                                BlockEntity fakeEntity = new BlockEntity(entity.getType(), imPos, entity.getCachedState()) {
+                                };
 
-                                buf.writeBlockPos(imPos);
-                                buf.writeRegistryValue(Registries.BLOCK_ENTITY_TYPE, entity.getType());
-                                buf.writeNbt(entity.toInitialChunkDataNbt());
-
-                                blockEntityPackets.add(new BlockEntityUpdateS2CPacket(buf));
+                                blockEntityPackets.add(BlockEntityUpdateS2CPacket.create(fakeEntity, (e, reg)->entity.toInitialChunkDataNbt(reg)));
                             }
                         }
                     }
@@ -160,13 +155,10 @@ public class PlayerManager {
                 toBeSent.put(pos, originalBlock);
                 BlockEntity entity = sourceView.getBlockEntity(pos);
                 if (entity != null) {
-                    var buf = PacketByteBufs.create();
+                    BlockEntity fakeEntity = new BlockEntity(entity.getType(), pos, entity.getCachedState()) {
+                    };
 
-                    buf.writeBlockPos(pos);
-                    buf.writeRegistryValue(Registries.BLOCK_ENTITY_TYPE, entity.getType());
-                    buf.writeNbt(entity.toInitialChunkDataNbt());
-
-                    blockEntityPackets.add(new BlockEntityUpdateS2CPacket(buf));
+                    blockEntityPackets.add(BlockEntityUpdateS2CPacket.create(fakeEntity, (e, reg)->entity.toInitialChunkDataNbt(reg)));
                 }
             }
             if (config.debugParticles) Util.sendParticle(player, Util.getCenter(pos), 1, 0, originalBlock != cachedState ? 0 : 1);
@@ -176,7 +168,7 @@ public class PlayerManager {
             for (UUID uuid : hiddenEntities) {
                 if (entity.getUuid().equals(uuid)) {
                     hiddenEntities.remove(uuid);
-                    player.networkHandler.sendPacket(new EntityPositionS2CPacket(entity));
+                    player.networkHandler.sendPacket(EntityPositionSyncS2CPacket.create(entity));
                     return;
                 }
             }
@@ -217,9 +209,7 @@ public class PlayerManager {
             if (config.debugParticles) Util.sendParticle(player, Util.getCenter(pos), 1, 0, originalBlock != cachedState ? 0 : 1);
         });
         for (Portal portal : portalManager.getPortals()) {
-            BlockPos.iterate(portal.getLowerLeft(), portal.getUpperRight()).forEach(pos -> {
-                packetStorage.put(pos.toImmutable(), Util.getBlockAsync(player.getServerWorld(), pos));
-            });
+            BlockPos.iterate(portal.getLowerLeft(), portal.getUpperRight()).forEach(pos -> packetStorage.put(pos.toImmutable(), Util.getBlockAsync(player.getServerWorld(), pos)));
         }
         packetStorage.sendTo(this.player);
     }
@@ -244,17 +234,15 @@ public class PlayerManager {
                 existingEntities.stream().noneMatch(entity -> uuid.equals(entity.getUuid())));
     }
 
-    private static EntityPositionS2CPacket createEntityPacket(Entity entity, double x, double y) {
-        var buf = PacketByteBufs.create();
-        buf.writeVarInt(entity.getId());
-        buf.writeDouble(x);
-        buf.writeDouble(y);
-        buf.writeDouble(entity.getZ());
-        buf.writeByte((byte)((int)(entity.getYaw() * 256.0F / 360.0F)));
-        buf.writeByte((byte)((int)(entity.getPitch() * 256.0F / 360.0F)));
-        buf.writeBoolean(false);
-
-        return new EntityPositionS2CPacket(buf);
+    private static EntityPositionSyncS2CPacket createEntityPacket(Entity entity, double x) {
+        return new EntityPositionSyncS2CPacket(
+                entity.getId(),
+                new PlayerPosition(
+                        new Vec3d(x, Double.MAX_VALUE, entity.getZ()),
+                        new Vec3d(0, 0, 0),
+                        entity.getYaw(),
+                        entity.getPitch()),
+                false);
     }
 
     private static class AllExceptPlayer implements TypeFilter<Entity, Entity> {

@@ -70,9 +70,7 @@ public class PortalManager {
                 Portal p = new Portal(upperRight, lowerLeft, axis, hasCorners, transformProfile);
                 newPortals.add(p);
 
-                BlockPos.iterate(upperRight,lowerLeft).forEach((pos) -> {
-                    checked.add(pos.toImmutable());
-                });
+                BlockPos.iterate(upperRight,lowerLeft).forEach((pos) -> checked.add(pos.toImmutable()));
             } catch (IllegalArgumentException ignored) {}
         }
         this.portals = newPortals;
@@ -111,7 +109,7 @@ public class PortalManager {
         DummyEntity dummyEntity = new DummyEntity(((PlayerInterface)player).immersivecursedness$getUnfakedWorld(), pos);
         dummyEntity.setBodyYaw(0);
         portalForcerMixinActivate = true;
-        TeleportTarget teleportTarget = dummyEntity.getTeleportTargetB(destination);
+	    TeleportTarget teleportTarget = dummyEntity.getTeleportTargetB(destination);
         portalForcerMixinActivate = false;
 
         if (teleportTarget == null) {
@@ -120,9 +118,9 @@ public class PortalManager {
 
         return new TransformProfile(
                 pos,
-                new BlockPos(MathHelper.floor(teleportTarget.position.x), MathHelper.floor(teleportTarget.position.y), MathHelper.floor(teleportTarget.position.z)),
+                new BlockPos(MathHelper.floor(teleportTarget.position().x), MathHelper.floor(teleportTarget.position().y), MathHelper.floor(teleportTarget.position().z)),
                 0,
-                (int)teleportTarget.yaw);
+                (int)teleportTarget.yaw());
     }
 
     private void garbageCollect(ServerPlayerEntity player) {
@@ -142,8 +140,6 @@ public class PortalManager {
     }
 
     private static Stream<PointOfInterest> getPortalsInChunkRadius(PointOfInterestStorage storage, BlockPos pos, int radius) {
-        return ChunkPos.stream(new ChunkPos(pos), radius).flatMap((chunkPos) -> {
-            return storage.getInChunk((poi) -> poi.matchesKey(PointOfInterestTypes.NETHER_PORTAL), chunkPos, PointOfInterestStorage.OccupationStatus.ANY);
-        });
+        return ChunkPos.stream(new ChunkPos(pos), radius).flatMap((chunkPos) -> storage.getInChunk((poi) -> poi.matchesKey(PointOfInterestTypes.NETHER_PORTAL), chunkPos, PointOfInterestStorage.OccupationStatus.ANY));
     }
 }

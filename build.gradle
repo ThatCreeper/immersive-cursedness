@@ -1,18 +1,18 @@
 plugins {
 	id "com.modrinth.minotaur" version "1.2.1"
-	id 'fabric-loom' version '0.12-SNAPSHOT'
+	id 'fabric-loom' version '1.10-SNAPSHOT'
 	id 'maven-publish'
 }
 
-sourceCompatibility = JavaVersion.VERSION_17
-targetCompatibility = JavaVersion.VERSION_17
+sourceCompatibility = JavaVersion.VERSION_21
+targetCompatibility = JavaVersion.VERSION_21
 
 archivesBaseName = project.archives_base_name
 version = project.mod_version
 group = project.maven_group
 
 repositories {
-	jcenter()
+	maven { url "https://maven.shedaniel.me/" }
 }
 
 dependencies {
@@ -24,10 +24,7 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	modApi("me.sargunvohra.mcmods:autoconfig1u:${project.autoconfig_version}") {
-		exclude(group: "net.fabricmc.fabric-api")
-	}
-	include "me.sargunvohra.mcmods:autoconfig1u:${project.autoconfig_version}"
+	modApi "me.shedaniel.cloth:cloth-config-fabric:17.0.144"
 }
 
 processResources {

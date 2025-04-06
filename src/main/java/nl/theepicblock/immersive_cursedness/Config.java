@@ -1,10 +1,10 @@
 package nl.theepicblock.immersive_cursedness;
 
-import me.sargunvohra.mcmods.autoconfig1u.ConfigData;
-import me.sargunvohra.mcmods.autoconfig1u.shadowed.blue.endless.jankson.Comment;
+import me.shedaniel.autoconfig.ConfigData;
+import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.Comment;
 
 @SuppressWarnings("FieldMayBeFinal")
-@me.sargunvohra.mcmods.autoconfig1u.annotation.Config(name = "immersive-cursedness")
+@me.shedaniel.autoconfig.annotation.Config(name = "immersive-cursedness")
 public class Config implements ConfigData {
 	public int horizontalSendLimit = 70;
 	@Comment("Should usually be atmosphereRadius+2")

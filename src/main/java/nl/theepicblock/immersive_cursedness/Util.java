@@ -1,18 +1,15 @@
 package nl.theepicblock.immersive_cursedness;
 
-import com.mojang.datafixers.util.Either;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.network.packet.s2c.play.BlockUpdateS2CPacket;
 import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
 import net.minecraft.particle.DustParticleEffect;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ChunkHolder;
+import net.minecraft.server.world.OptionalChunk;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.*;
-import net.minecraft.registry.RegistryKey;
 import net.minecraft.world.HeightLimitView;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
@@ -20,9 +17,6 @@ import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.poi.PointOfInterest;
 import nl.theepicblock.immersive_cursedness.mixin.ServerChunkManagerInvoker;
 import nl.theepicblock.immersive_cursedness.objects.TransformProfile;
-import org.joml.Vector3f;
-
-import java.util.Optional;
 
 public class Util {
     public static int follow(PointOfInterest[] list, BlockPos start, Direction direction) {
@@ -42,29 +36,19 @@ public class Util {
     }
 
     public static int get(BlockPos b, Direction.Axis axis) {
-        switch (axis) {
-            case X:
-                return b.getX();
-            case Y:
-                return b.getY();
-            case Z:
-                return b.getZ();
-            default:
-                return 0;
-        }
+	    return switch (axis) {
+		    case X -> b.getX();
+		    case Y -> b.getY();
+		    case Z -> b.getZ();
+	    };
     }
 
     public static double get(Vec3d b, Direction.Axis axis) {
-        switch (axis) {
-            case X:
-                return b.getX();
-            case Y:
-                return b.getY();
-            case Z:
-                return b.getZ();
-            default:
-                return 0;
-        }
+	    return switch (axis) {
+		    case X -> b.getX();
+		    case Y -> b.getY();
+		    case Z -> b.getZ();
+	    };
     }
 
     public static void set(BlockPos.Mutable b, int i, Direction.Axis axis) {
@@ -99,7 +83,7 @@ public class Util {
     }
 
     public static void sendParticle(ServerPlayerEntity player, Vec3d pos, float r, float g, float b) {
-        player.networkHandler.sendPacket(new ParticleS2CPacket(new DustParticleEffect(new Vector3f(r,g,b),1), true, pos.x, pos.y, pos.z, 0, 0, 0, 0, 0));
+        player.networkHandler.sendPacket(new ParticleS2CPacket(new DustParticleEffect(ColorHelper.fromFloats(1, r, g, b), 1.f), true, true, pos.x, pos.y, pos.z, 0, 0, 0, 0, 1));
     }
 
     public static BlockPos makeBlockPos(double x, double y, double z) {
@@ -119,16 +103,19 @@ public class Util {
     }
 
     private static final BlockState AIR = Blocks.AIR.getDefaultState();
+    private static class BlockGetException extends Exception {}
     public static BlockState getBlockAsync(ServerWorld world, BlockPos pos) {
-        Optional<Chunk> chunkOptional = getChunkAsync(world, pos.getX() >> 4, pos.getZ() >> 4);
-        if (!chunkOptional.isPresent()) return AIR;
-        return chunkOptional.get().getBlockState(pos);
+        OptionalChunk<Chunk> chunkOptional = getChunkAsync(world, pos.getX() >> 4, pos.getZ() >> 4);
+        try {
+            return chunkOptional.orElseThrow(BlockGetException::new).getBlockState(pos);
+        } catch (BlockGetException e) {
+            return AIR;
+        }
     }
 
-    public static Optional<Chunk> getChunkAsync(ServerWorld world, int x, int z) {
+    public static OptionalChunk<Chunk> getChunkAsync(ServerWorld world, int x, int z) {
         ServerChunkManagerInvoker chunkManager = (ServerChunkManagerInvoker)world.getChunkManager();
-        Either<Chunk,ChunkHolder.Unloaded> either = chunkManager.ic$callGetChunkFuture(x, z, ChunkStatus.FULL, false).join();
-        return either.left();
+	    return chunkManager.ic$callGetChunkFuture(x, z, ChunkStatus.FULL, false).join();
     }
 
     public static ServerWorld getDestination(ServerPlayerEntity player) {
@@ -163,11 +150,11 @@ public class Util {
 
     public static WorldHeights calculateMinMax(HeightLimitView source, HeightLimitView destination, TransformProfile t) {
         int lower = source.getBottomY();
-        int top = source.getTopY();
+        int top = source.getTopYInclusive();
         int destinationLower = t.transformYOnly(lower);
         int destinationTop = t.transformYOnly(top);
         destinationLower = Math.max(destinationLower, destination.getBottomY());
-        destinationTop = Math.min(destinationTop, destination.getTopY());
+        destinationTop = Math.min(destinationTop, destination.getTopYInclusive());
         destinationLower = t.unTransformYOnly(destinationLower);
         destinationTop = t.unTransformYOnly(destinationTop);
 

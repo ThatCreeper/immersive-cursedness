@@ -1,9 +1,8 @@
 package nl.theepicblock.immersive_cursedness;
 
-import me.sargunvohra.mcmods.autoconfig1u.AutoConfig;
+import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import org.apache.logging.log4j.Logger;
 
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
@@ -61,9 +60,7 @@ public class CursednessServer {
         }
 
         //Tick player managers
-        playerManagers.forEach((player, manager) -> {
-            manager.tick(tickCount);
-        });
+        playerManagers.forEach((player, manager) -> manager.tick(tickCount));
     }
 
     public PlayerManager getManager(ServerPlayerEntity player) {
